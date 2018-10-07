@@ -20,9 +20,9 @@ local utils = require 'mp.utils'
 -- LANGS
 --     The languages to download the subtitles in.
 -------------------------------------------------------------------------
-local SUBL = "subliminal"
-local TMPDIR = os.getenv("HOME") .. "/.cache/mpv/autosub/"
-local LANGS = {"en", "it"}
+local SUBL = "/usr/local/bin/subliminal"
+local TMPDIR = os.getenv("HOME") .. "/.config/mpv/tmp/autosub/"
+local LANGS = {"en", "ko"}
 -------------------------------------------------------------------------
 
 
