@@ -5,25 +5,19 @@
 
 local utils = require 'mp.utils'
 
-------------------------------------------------------------------------
--- USER CONFIG ---------------------------------------------------------
-------------------------------------------------------------------------
--- SUBL
---     If subliminal is not in PATH, provide full path to the executable
---     instead.
--- TMPDIR
---     The directory to stuff the subtitles into if the media being
---     played is a stream. If the directory doesn't exists, it will be
---     created. The string must end with a slash character.
---     If the media being played is a local file, the subtitles will be
---     saved in the directory where the file is.
--- LANGS
---     The languages to download the subtitles in.
--------------------------------------------------------------------------
+------------------------------------------------------------
+-- USER OPTIONS
+------------------------------------------------------------
 local SUBL = "/usr/local/bin/subliminal"
-local TMPDIR = os.getenv("HOME") .. "/.config/mpv/tmp/autosub/"
+local TMPDIR = os.getenv("HOME") .. "/.config/mpv/autosub/"
+local LOGINS = {
+    "--addic7ed", "USERNAME", "PASSWORD",
+    "--opensubtitles", "USERNAME", "PASSWORD"
+}
 local LANGS = {"en", "ko"}
--------------------------------------------------------------------------
+local PROVIDERS = {"podnapisi", "shooter", "tvsubtitles"}
+local REFINERS = {"metadata", "omdb", "tvdb"}
+------------------------------------------------------------
 
 
 function print_msg(msg, level)
@@ -51,16 +45,34 @@ end
 
 
 function download_subtitles(subliminal_executable, media_source, media_title, langs, tmpdir)
-	local args = {subliminal_executable, "download"}
+	-- local args = {subliminal_executable, "download"}
+	local args = {subliminal_executable}
+
+    for _, login in ipairs(LOGINS) do
+        table.insert(args, login)
+    end
+
+    table.insert(args, "download")
+
+	for _, lang in ipairs(langs) do
+		table.insert(args, "-l")
+		table.insert(args, lang)
+	end
+	for _, provider in ipairs(PROVIDERS) do
+		table.insert(args, "-p")
+		table.insert(args, provider)
+	end
+	for _, refiner in ipairs(REFINERS) do
+		table.insert(args, "-r")
+		table.insert(args, refiner)
+	end
 	if media_source == "stream" then
 		table.insert(args, "-d")
 		table.insert(args, tmpdir .. media_title)
 	end
-	for idx, lang in ipairs(langs) do
-		table.insert(args, "-l")
-		table.insert(args, lang)
-	end
+
 	table.insert(args, media_title)
+
 	return execute_command(args)
 end
 
@@ -114,6 +126,5 @@ function load_sub_fn()
 		print_msg(msg, "warning")
 	end
 end
-
 
 mp.add_key_binding("b", "auto_load_subs", load_sub_fn)
