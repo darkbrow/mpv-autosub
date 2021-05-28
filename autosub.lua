@@ -8,15 +8,13 @@ local utils = require 'mp.utils'
 ------------------------------------------------------------
 -- USER OPTIONS
 ------------------------------------------------------------
-local SUBL = "/usr/local/bin/subliminal"
-local TMPDIR = os.getenv("HOME") .. "/.config/mpv/autosub/"
-local LOGINS = {
+local bin_location = "/usr/local/bin/subliminal"
+local tmpdir = os.getenv("HOME") .. "/.config/mpv/autosub/"
+local logins = {
     "--addic7ed", "USERNAME", "PASSWORD",
     "--opensubtitles", "USERNAME", "PASSWORD"
 }
-local LANGS = {"en", "ko"}
-local PROVIDERS = {"podnapisi", "shooter", "tvsubtitles"}
-local REFINERS = {"metadata", "omdb", "tvdb"}
+local langs = {"LANG1", "LANG2"}
 ------------------------------------------------------------
 
 
@@ -44,11 +42,10 @@ function prepare_tmpdir(tmpdir, title)
 end
 
 
-function download_subtitles(subliminal_executable, media_source, media_title, langs, tmpdir)
-	-- local args = {subliminal_executable, "download"}
+function download_subtitles(subliminal_executable, media_type, media_title)
 	local args = {subliminal_executable}
 
-    for _, login in ipairs(LOGINS) do
+    for _, login in ipairs(logins) do
         table.insert(args, login)
     end
 
@@ -58,15 +55,8 @@ function download_subtitles(subliminal_executable, media_source, media_title, la
 		table.insert(args, "-l")
 		table.insert(args, lang)
 	end
-	for _, provider in ipairs(PROVIDERS) do
-		table.insert(args, "-p")
-		table.insert(args, provider)
-	end
-	for _, refiner in ipairs(REFINERS) do
-		table.insert(args, "-r")
-		table.insert(args, refiner)
-	end
-	if media_source == "stream" then
+
+	if media_type == "stream" then
 		table.insert(args, "-d")
 		table.insert(args, tmpdir .. media_title)
 	end
@@ -91,7 +81,7 @@ end
 
 
 function load_sub_fn()
-	local source = "file"
+	local media_type = "file"
 	local title = mp.get_property("path")
 
 	-- Check if we're dealing with a stream, not a file (there's
@@ -99,22 +89,22 @@ function load_sub_fn()
 	if title == nil or title:find("http://") == 1
 			or title:find("https://") == 1 then
 		title = mp.get_property("media-title")
-		source = "stream"
-		prepare_tmpdir(TMPDIR, title)
+		media_type = "stream"
+		prepare_tmpdir(tmpdir, title)
 	end
 
 	local msg = string.format("Searching for subtitles (%s) for %s",
-	table.concat(LANGS, ", "), title)
+	table.concat(langs, ", "), title)
 	print_msg(msg, "info")
 
-	local result = download_subtitles(SUBL, source, title, LANGS, TMPDIR)
+	local result = download_subtitles(bin_location, media_type, title)
 
 	if result.status == 0 then
-		if source == "file" then
+		if media_type == "file" then
 			mp.commandv("rescan_external_files", "reselect")
-		elseif source == "stream" then
-			for file in iter_files(TMPDIR .. title) do
-				mp.commandv("sub-add", TMPDIR .. title .. "/" .. file)
+		elseif media_type == "stream" then
+			for file in iter_files(tmpdir .. title) do
+				mp.commandv("sub-add", tmpdir .. title .. "/" .. file)
 			end
 		end
 		msg = string.format("Subtitle download successful.\nSubliminal" ..
